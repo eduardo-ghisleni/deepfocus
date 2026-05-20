@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, todayISO } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import StarField from '../components/StarField'
 
 function formatDate(iso) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', {
@@ -50,29 +51,27 @@ export default function History() {
   }, [user])
 
   return (
-    <div
-      className="min-h-screen p-6"
-      style={{ background: 'linear-gradient(135deg, #f0fff4, #ffffff)' }}
-    >
-      <div className="max-w-2xl mx-auto flex flex-col gap-4">
+    <div className="min-h-screen p-6" style={{ position: 'relative' }}>
+      <StarField />
+      <div className="max-w-2xl mx-auto flex flex-col gap-4" style={{ position: 'relative', zIndex: 1 }}>
         <div className="flex items-center gap-4 mb-2">
           <button
             onClick={() => navigate('/app')}
-            className="text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200 cursor-pointer"
+            className="text-slate-400 hover:text-slate-200 text-sm transition-colors duration-200 cursor-pointer"
           >
             ← Back
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">History</h1>
+          <h1 className="text-2xl font-bold text-white">History</h1>
         </div>
 
         {loading && (
-          <p className="text-gray-400 text-center py-12 text-sm">Loading...</p>
+          <p className="text-slate-500 text-center py-12 text-sm">Loading...</p>
         )}
 
         {!loading && days.length === 0 && (
           <div className="glass p-10 flex flex-col items-center gap-2">
-            <p className="text-gray-400 text-center">No history yet.</p>
-            <p className="text-gray-300 text-sm text-center">Complete your first day to see it here.</p>
+            <p className="text-slate-400 text-center">No history yet.</p>
+            <p className="text-slate-600 text-sm text-center">Complete your first day to see it here.</p>
           </div>
         )}
 
@@ -82,17 +81,17 @@ export default function History() {
           return (
             <div key={day.date} className="glass p-6 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-gray-900">{formatDate(day.date)}</span>
-                <span className="text-[#84CC16] font-bold text-sm">
+                <span className="font-semibold text-white">{formatDate(day.date)}</span>
+                <span className="text-blue-400 font-bold text-sm">
                   {day.pomodoros} {day.pomodoros === 1 ? 'pomodoro' : 'pomodoros'}
                 </span>
               </div>
               {day.challenge && (
-                <p className="text-gray-600 text-sm italic border-l-2 border-[#84CC16] pl-3">
+                <p className="text-slate-400 text-sm italic border-l-2 border-blue-500/50 pl-3">
                   "{day.challenge}"
                 </p>
               )}
-              <p className="text-gray-400 text-xs">
+              <p className="text-slate-500 text-xs">
                 {total === 0 ? 'No tasks' : `${done}/${total} tasks completed`}
               </p>
             </div>

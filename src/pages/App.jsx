@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, todayISO, incrementPomodoro } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
@@ -6,6 +6,85 @@ import Timer from '../components/Timer'
 import TaskList from '../components/TaskList'
 import BigChallenge from '../components/BigChallenge'
 import StatsBar from '../components/StatsBar'
+import StarField from '../components/StarField'
+
+function Avatar({ user }) {
+  const [error, setError] = useState(false)
+  const [hover, setHover] = useState(false)
+  const inputRef = useRef(null)
+  const lsKey = `deepfocus_avatar_${user?.id}`
+
+  const [customSrc, setCustomSrc] = useState(() => localStorage.getItem(lsKey))
+
+  const googleSrc = !error
+    ? (user?.user_metadata?.avatar_url
+      ?? user?.user_metadata?.picture
+      ?? user?.identities?.[0]?.identity_data?.avatar_url
+      ?? null)
+    : null
+
+  const src = customSrc ?? googleSrc
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result
+      localStorage.setItem(lsKey, dataUrl)
+      setCustomSrc(dataUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div
+      className="relative w-8 h-8 rounded-full cursor-pointer"
+      onClick={() => inputRef.current?.click()}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title="Clique para trocar a foto"
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
+
+      {src ? (
+        <img
+          src={src}
+          alt="profile"
+          onError={() => setError(true)}
+          className="w-8 h-8 rounded-full object-cover"
+          style={{ border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 0 10px rgba(59,130,246,0.3)' }}
+        />
+      ) : (
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', border: '2px solid rgba(255,255,255,0.15)' }}
+        >
+          {user?.email?.[0]?.toUpperCase()}
+        </div>
+      )}
+
+      {hover && (
+        <div
+          className="absolute inset-0 rounded-full flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function App() {
   const { user } = useAuth()
@@ -73,19 +152,21 @@ export default function App() {
   if (!challengeLoaded) return null
 
   return (
-    <div
-      className="min-h-screen p-6"
-      style={{ background: 'linear-gradient(135deg, #f0fff4, #ffffff)' }}
-    >
+    <div className="min-h-screen p-6" style={{ position: 'relative' }}>
+      <StarField />
+
       {showModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        >
           <div className="glass-modal p-8 w-full max-w-md flex flex-col gap-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">What's your main challenge today?</h2>
-              <p className="text-gray-500 text-sm mt-1">Once set, this cannot be changed.</p>
+              <h2 className="text-xl font-bold text-white">What's your main challenge today?</h2>
+              <p className="text-slate-400 text-sm mt-1">Once set, this cannot be changed.</p>
             </div>
             <input
-              className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#84CC16] bg-white/70"
+              className="glass-input w-full px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               placeholder="e.g. Finish the onboarding flow"
               value={newChallenge}
               onChange={e => setNewChallenge(e.target.value)}
@@ -95,7 +176,8 @@ export default function App() {
             <button
               onClick={saveChallenge}
               disabled={saving || !newChallenge.trim()}
-              className="bg-[#84CC16] hover:bg-[#65A30D] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors duration-200 cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-md transition-colors duration-200 cursor-pointer"
+              style={{ boxShadow: '0 0 20px rgba(59,130,246,0.3)' }}
             >
               {saving ? 'Saving...' : 'Set Challenge'}
             </button>
@@ -103,31 +185,36 @@ export default function App() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto flex flex-col gap-5">
+      <div className="max-w-6xl mx-auto flex flex-col gap-5" style={{ position: 'relative', zIndex: 1 }}>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">deepfocus</h1>
-          <button
-            onClick={handleSignOut}
-            className="text-gray-400 hover:text-gray-600 text-xs transition-colors duration-200 cursor-pointer"
-          >
-            Sign out
-          </button>
+          <h1 className="text-2xl font-bold text-white">deepfocus</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/historico')}
+              className="text-slate-400 hover:text-slate-200 text-sm transition-colors duration-200 cursor-pointer"
+            >
+              History
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="text-slate-500 hover:text-slate-300 text-xs transition-colors duration-200 cursor-pointer"
+            >
+              Sign out
+            </button>
+            <Avatar user={user} />
+          </div>
         </div>
 
         <StatsBar pomodorosToday={pomodorosToday} />
 
-        {challenge && <BigChallenge text={challenge.texto} />}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+          <Timer onPomodoroComplete={handlePomodoroComplete} />
 
-        <Timer onPomodoroComplete={handlePomodoroComplete} />
-
-        <TaskList userId={user.id} />
-
-        <button
-          onClick={() => navigate('/historico')}
-          className="text-gray-400 hover:text-gray-600 text-sm self-center transition-colors duration-200 cursor-pointer"
-        >
-          View history →
-        </button>
+          <div className="flex flex-col gap-5">
+            {challenge && <BigChallenge text={challenge.texto} />}
+            <TaskList userId={user.id} />
+          </div>
+        </div>
       </div>
     </div>
   )

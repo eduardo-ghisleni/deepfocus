@@ -2,10 +2,40 @@ import { useState, useEffect } from 'react'
 import { Trash2, Plus } from 'lucide-react'
 import { supabase, todayISO } from '../lib/supabase'
 
+const PRIORIDADES = [
+  { label: 'URGENTE',    color: '#EF4444', bg: 'rgba(239,68,68,0.15)',   border: 'rgba(239,68,68,0.35)' },
+  { label: 'IMPORTANTE', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.35)' },
+  { label: 'SECUNDÁRIA', color: '#64748B', bg: 'rgba(100,116,139,0.15)', border: 'rgba(100,116,139,0.3)' },
+]
+
+function PriorityBadge({ value, onClick }) {
+  const p = PRIORIDADES.find(x => x.label === value) ?? PRIORIDADES[2]
+  return (
+    <button
+      onClick={onClick}
+      title="Clique para alterar prioridade"
+      className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer transition-all duration-200 shrink-0"
+      style={{ color: p.color, background: p.bg, border: `1px solid ${p.border}`, letterSpacing: '0.04em' }}
+    >
+      {p.label}
+    </button>
+  )
+}
+
 export default function TaskList({ userId }) {
   const [tasks, setTasks] = useState([])
   const [input, setInput] = useState('')
+  const [priorities, setPriorities] = useState({})
   const today = todayISO()
+
+  const cycleP = (id) => {
+    setPriorities(prev => {
+      const current = prev[id] ?? 'SECUNDÁRIA'
+      const idx = PRIORIDADES.findIndex(p => p.label === current)
+      const next = PRIORIDADES[(idx + 1) % PRIORIDADES.length].label
+      return { ...prev, [id]: next }
+    })
+  }
 
   useEffect(() => {
     supabase
@@ -44,15 +74,15 @@ export default function TaskList({ userId }) {
   return (
     <div className="glass p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-gray-900">Today's Tasks</h2>
+        <h2 className="font-bold text-white">Today's Tasks</h2>
         {tasks.length > 0 && (
-          <span className="text-xs text-gray-400">{done}/{tasks.length} done</span>
+          <span className="text-xs text-slate-400">{done}/{tasks.length} done</span>
         )}
       </div>
 
       <div className="flex gap-2">
         <input
-          className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#84CC16] bg-white/60"
+          className="glass-input flex-1 px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           placeholder="Add a task..."
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -60,7 +90,7 @@ export default function TaskList({ userId }) {
         />
         <button
           onClick={addTask}
-          className="bg-[#84CC16] hover:bg-[#65A30D] text-white p-2 rounded-xl transition-colors duration-200 cursor-pointer"
+          className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-md transition-colors duration-200 cursor-pointer"
         >
           <Plus size={18} />
         </button>
@@ -74,25 +104,26 @@ export default function TaskList({ userId }) {
               checked={task.feita}
               onChange={() => toggleTask(task)}
               className="w-4 h-4 cursor-pointer rounded"
-              style={{ accentColor: '#84CC16' }}
+              style={{ accentColor: '#3B82F6' }}
             />
             <span
               className={`flex-1 text-sm transition-colors duration-200 ${
-                task.feita ? 'line-through text-gray-400' : 'text-gray-800'
+                task.feita ? 'line-through text-slate-500' : 'text-slate-200'
               }`}
             >
               {task.texto}
             </span>
+            <PriorityBadge value={priorities[task.id] ?? 'SECUNDÁRIA'} onClick={() => cycleP(task.id)} />
             <button
               onClick={() => deleteTask(task.id)}
-              className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all duration-200 cursor-pointer"
+              className="opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all duration-200 cursor-pointer"
             >
               <Trash2 size={14} />
             </button>
           </li>
         ))}
         {tasks.length === 0 && (
-          <p className="text-gray-400 text-xs text-center py-3">No tasks yet. Add one above.</p>
+          <p className="text-slate-500 text-xs text-center py-3">No tasks yet. Add one above.</p>
         )}
       </ul>
     </div>

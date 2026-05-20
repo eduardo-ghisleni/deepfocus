@@ -46,6 +46,21 @@ function playNotificationSound() {
   } catch (_e) { /* requires prior user gesture */ }
 }
 
+function playCountdownBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 660
+    gain.gain.setValueAtTime(0.23, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.25)
+  } catch (_e) { /* requires prior user gesture */ }
+}
+
 export default function Timer({ onPomodoroComplete }) {
   const [startTimestamp, setStartTimestamp] = useState(null)
   const [pausedOffset, setPausedOffset] = useState(0)
@@ -59,6 +74,7 @@ export default function Timer({ onPomodoroComplete }) {
 
   const prevPhaseRef = useRef(0)
   const completedRef = useRef(new Set())
+  const countdownRef = useRef(new Set())
 
   useEffect(() => {
     const saved = loadTimerState()
@@ -104,7 +120,16 @@ export default function Timer({ onPomodoroComplete }) {
 
       setDisplay({ phaseIndex, remaining, cycleProgress })
 
+      // Countdown beeps at 3, 2, 1 seconds before phase ends
+      const remainingInt = Math.ceil(remaining)
+      const countdownKey = `${phaseIndex}-${remainingInt}`
+      if ([3, 2, 1].includes(remainingInt) && !countdownRef.current.has(countdownKey)) {
+        countdownRef.current.add(countdownKey)
+        playCountdownBeep()
+      }
+
       if (phaseIndex !== prevPhaseRef.current) {
+        countdownRef.current = new Set()
         const transitionedFrom = prevPhaseRef.current
         prevPhaseRef.current = phaseIndex
         playNotificationSound()
@@ -145,73 +170,98 @@ export default function Timer({ onPomodoroComplete }) {
     setPauseStart(null)
     prevPhaseRef.current = 0
     completedRef.current = new Set()
+    countdownRef.current = new Set()
     setDisplay({ phaseIndex: 0, remaining: CYCLE[0].duration, cycleProgress: 0 })
   }
 
   const mins = String(Math.floor(display.remaining / 60)).padStart(2, '0')
   const secs = String(Math.floor(display.remaining % 60)).padStart(2, '0')
   const phase = CYCLE[display.phaseIndex]
+  const isFocus = phase.type === 'focus'
 
   return (
     <div className="glass p-8 flex flex-col items-center gap-5">
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+        <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
           {phase.label}
         </span>
-        <span className="text-xs text-gray-300">·</span>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-slate-600">·</span>
+        <span className="text-xs text-slate-400">
           Phase {display.phaseIndex + 1} of 8
         </span>
       </div>
 
       <div
         style={{
-          fontSize: 72,
+          fontSize: 108,
           fontWeight: 700,
-          color: phase.type === 'focus' ? '#84CC16' : '#6B7280',
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-2px',
           lineHeight: 1,
-          transition: 'color 300ms',
+          transition: 'color 300ms, text-shadow 300ms',
+          color: isFocus ? '#FFFFFF' : '#94A3B8',
+          textShadow: isFocus
+            ? '0 0 40px rgba(59, 130, 246, 0.5), 0 0 80px rgba(59, 130, 246, 0.2)'
+            : 'none',
         }}
       >
         {mins}:{secs}
       </div>
 
       <div className="w-full flex flex-col gap-1">
-        <div className="w-full bg-[#ECFCCB] rounded-full h-2 overflow-hidden">
+        <div
+          className="w-full rounded-sm h-1.5 overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.06)' }}
+        >
           <div
-            className="h-full bg-[#84CC16] rounded-full"
+            className="h-full rounded-sm"
             style={{
               width: `${display.cycleProgress * 100}%`,
+              background: 'linear-gradient(90deg, #3B82F6, #818CF8)',
               transition: 'width 1s linear',
+              boxShadow: '0 0 8px rgba(59,130,246,0.6)',
             }}
           />
         </div>
-        <p className="text-xs text-gray-400 text-right">
+        <p className="text-xs text-slate-500 text-right">
           {Math.round(display.cycleProgress * 100)}% of cycle
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 w-full">
         {running ? (
           <button
             onClick={pause}
-            className="bg-[#ECFCCB] hover:bg-[#d4f5a0] text-[#65A30D] font-semibold px-8 py-3 rounded-xl transition-colors duration-200 cursor-pointer"
+            className="flex-1 font-semibold py-3 rounded-md transition-all duration-200 cursor-pointer text-white tracking-wide"
+            style={{
+              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+              boxShadow: '0 0 24px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+              border: '1px solid rgba(245,158,11,0.5)',
+            }}
           >
             Pause
           </button>
         ) : (
           <button
             onClick={start}
-            className="bg-[#84CC16] hover:bg-[#65A30D] text-white font-semibold px-8 py-3 rounded-xl transition-colors duration-200 cursor-pointer"
+            className="flex-1 text-white font-semibold py-3 rounded-md transition-all duration-200 cursor-pointer tracking-wide"
+            style={{
+              background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+              boxShadow: '0 0 24px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              border: '1px solid rgba(59,130,246,0.5)',
+            }}
           >
             {startTimestamp ? 'Resume' : 'Start'}
           </button>
         )}
         <button
           onClick={reset}
-          className="text-gray-400 hover:text-gray-600 px-4 py-3 rounded-xl transition-colors duration-200 text-sm cursor-pointer"
+          className="px-5 py-3 rounded-md transition-all duration-200 cursor-pointer text-sm text-white tracking-wide font-semibold"
+          style={{
+            background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+            boxShadow: '0 0 24px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+            border: '1px solid rgba(59,130,246,0.5)',
+          }}
         >
           Reset
         </button>

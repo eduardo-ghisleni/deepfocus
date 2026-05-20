@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
+import StarField from '../components/StarField'
 
 export default function Login() {
   const { session } = useAuth()
@@ -19,21 +20,20 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: 'linear-gradient(135deg, #f0fff4, #ffffff)' }}
-    >
-      <div className="glass p-10 flex flex-col items-center gap-6 w-full max-w-sm mx-4">
+    <div className="min-h-screen flex items-center justify-center" style={{ position: 'relative' }}>
+      <StarField />
+      <div className="glass p-10 flex flex-col items-center gap-6 w-full max-w-sm mx-4" style={{ position: 'relative', zIndex: 1 }}>
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">deepfocus</h1>
-          <p className="text-gray-500 text-sm text-center">Your daily focus companion.</p>
+          <h1 className="text-4xl font-bold text-white tracking-tight">deepfocus</h1>
+          <p className="text-slate-400 text-sm text-center">Your daily focus companion.</p>
         </div>
 
-        <div className="w-full h-px bg-gray-100" />
+        <div className="w-full h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-[#84CC16] hover:bg-[#65A30D] text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200 cursor-pointer"
+          style={{ boxShadow: '0 0 24px rgba(59,130,246,0.3)' }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#fff" fillOpacity=".9"/>
@@ -44,9 +44,7 @@ export default function Login() {
           Continue with Google
         </button>
 
-        <p className="text-xs text-gray-400 text-center">
-          Stay focused. Ship more.
-        </p>
+        <p className="text-xs text-slate-500 text-center">Stay focused. Ship more.</p>
       </div>
     </div>
   )

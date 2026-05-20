@@ -3,33 +3,61 @@
 @layer base {
   * { box-sizing: border-box; }
   body {
-    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
-    background: linear-gradient(135deg, #f0fff4, #ffffff);
+    font-family: 'Poppins', system-ui, sans-serif;
+    background: #020308;
     min-height: 100vh;
-    color: #111827;
+    color: #F1F5F9;
     margin: 0;
   }
 }
 
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.09) 0%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+    backdrop-filter: blur(28px) saturate(220%) brightness(1.05);
+    -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.13);
     box-shadow:
-      0 4px 24px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    border-radius: 20px;
+      0 8px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+      inset 1px 0 rgba(255, 255, 255, 0.07),
+      inset -1px 0 rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
   }
   .glass-modal {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.11) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    backdrop-filter: blur(36px) saturate(240%) brightness(1.08);
+    -webkit-backdrop-filter: blur(36px) saturate(240%) brightness(1.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow:
-      0 8px 40px rgba(0, 0, 0, 0.10),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
+      0 12px 56px rgba(0, 0, 0, 0.65),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      inset 1px 0 rgba(255, 255, 255, 0.09),
+      inset -1px 0 rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+  }
+  .glass-input {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
   }
 }
