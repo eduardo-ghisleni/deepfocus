@@ -95,6 +95,9 @@ export default function App() {
   const [newChallenge, setNewChallenge] = useState('')
   const [saving, setSaving] = useState(false)
   const [pomodorosToday, setPomodorosToday] = useState(0)
+  const [minutosToday, setMinutosToday] = useState(0)
+  const [resetKey, setResetKey] = useState(0)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -114,12 +117,15 @@ export default function App() {
 
     supabase
       .from('pomodoro_sessions')
-      .select('pomodoros_completos')
+      .select('pomodoros_completos, minutos_foco')
       .eq('user_id', user.id)
       .eq('data', today)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setPomodorosToday(data.pomodoros_completos)
+        if (data) {
+          setPomodorosToday(data.pomodoros_completos)
+          setMinutosToday(data.minutos_foco)
+        }
       })
   }, [user])
 
@@ -140,8 +146,39 @@ export default function App() {
     setSaving(false)
   }
 
+  const handleFullReset = async () => {
+    localStorage.removeItem('deepfocus_timer')
+    await supabase
+      .from('pomodoro_sessions')
+      .upsert(
+        { user_id: user.id, data: todayISO(), pomodoros_completos: 0, minutos_foco: 0 },
+        { onConflict: 'user_id,data' }
+      )
+    await supabase.from('tasks').delete().eq('user_id', user.id).eq('data', todayISO())
+    if (challenge) {
+      await supabase.from('daily_challenge').delete().eq('id', challenge.id)
+    }
+    setPomodorosToday(0)
+    setMinutosToday(0)
+    setChallenge(null)
+    setShowModal(true)
+    setConfirmReset(false)
+    setResetKey(k => k + 1)
+  }
+
+  const handleUpdateChallenge = async (newText) => {
+    const { data } = await supabase
+      .from('daily_challenge')
+      .update({ texto: newText })
+      .eq('id', challenge.id)
+      .select()
+      .single()
+    if (data) setChallenge(data)
+  }
+
   const handlePomodoroComplete = async () => {
     setPomodorosToday(p => p + 1)
+    setMinutosToday(m => m + 25)
     await incrementPomodoro(user.id)
   }
 
@@ -189,6 +226,20 @@ export default function App() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">deepfocus</h1>
           <div className="flex items-center gap-4">
+            {confirmReset ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Reset all?</span>
+                <button onClick={handleFullReset} className="text-xs text-red-400 hover:text-red-300 transition-colors cursor-pointer">Yes</button>
+                <button onClick={() => setConfirmReset(false)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">No</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmReset(true)}
+                className="text-red-400 hover:text-red-300 text-xs transition-colors duration-200 cursor-pointer"
+              >
+                Reset
+              </button>
+            )}
             <button
               onClick={() => navigate('/historico')}
               className="text-slate-400 hover:text-slate-200 text-sm transition-colors duration-200 cursor-pointer"
@@ -205,14 +256,14 @@ export default function App() {
           </div>
         </div>
 
-        <StatsBar pomodorosToday={pomodorosToday} />
+        <StatsBar pomodorosToday={pomodorosToday} minutosToday={minutosToday} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-          <Timer onPomodoroComplete={handlePomodoroComplete} />
+          <Timer key={resetKey} onPomodoroComplete={handlePomodoroComplete} />
 
           <div className="flex flex-col gap-5">
-            {challenge && <BigChallenge text={challenge.texto} />}
-            <TaskList userId={user.id} />
+            {challenge && <BigChallenge text={challenge.texto} onSave={handleUpdateChallenge} />}
+            <TaskList key={resetKey} userId={user.id} />
           </div>
         </div>
       </div>

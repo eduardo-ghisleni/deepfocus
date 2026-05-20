@@ -46,6 +46,24 @@ function playNotificationSound() {
   } catch (_e) { /* requires prior user gesture */ }
 }
 
+function playCompletionSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const times = [0, 0.35, 0.7]
+    times.forEach(t => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 880
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + t)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3)
+      osc.start(ctx.currentTime + t)
+      osc.stop(ctx.currentTime + t + 0.3)
+    })
+  } catch (_e) {}
+}
+
 function playCountdownBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
@@ -104,6 +122,7 @@ export default function Timer({ onPomodoroComplete }) {
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startTimestamp) / 1000 - pausedOffset
       if (elapsed >= TOTAL_CYCLE_SECONDS) {
+        playCompletionSound()
         localStorage.removeItem(LS_KEY)
         setRunning(false)
         setStartTimestamp(null)
